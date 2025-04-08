@@ -116,8 +116,8 @@ class AlarmService {
 
     if (!alarm.isActive) return;
 
-    // 알람 ID 생성 (고유값)
-    final int alarmId = int.parse(alarm.id);
+    // 알람 ID 생성 (고유값) - UUID를 해시코드로 변환하여 정수 ID 생성
+    final int alarmId = alarm.id.hashCode;
 
     // 알람 시간 계산
     final DateTime now = DateTime.now();
@@ -198,7 +198,7 @@ class AlarmService {
 
   // 알람 취소
   Future<void> cancelAlarm(String id) async {
-    final int alarmId = int.parse(id);
+    final int alarmId = id.hashCode;
     await AndroidAlarmManager.cancel(alarmId);
     await _notificationsPlugin.cancel(alarmId);
   }

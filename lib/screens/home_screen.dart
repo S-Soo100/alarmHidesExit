@@ -21,7 +21,12 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // 화면이 로드된 후 저장소 초기화 - AlarmService에서 이미 초기화되었기 때문에 중복 초기화는 필요 없음
+    // 화면이 로드된 후 저장소 초기화
+    _initRepository();
+  }
+
+  Future<void> _initRepository() async {
+    await _repository.initialize();
   }
 
   @override
