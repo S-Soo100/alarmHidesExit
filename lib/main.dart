@@ -1,20 +1,71 @@
 import 'package:flutter/material.dart';
+import 'package:alarm_hides_exit/models/alarm_model.dart';
+import 'package:alarm_hides_exit/screens/dismiss/alarm_dismiss_base.dart';
+import 'package:alarm_hides_exit/screens/home_screen.dart';
+import 'package:alarm_hides_exit/services/alarm_service.dart';
+import 'package:alarm_hides_exit/utils/app_initializer.dart';
 
-void main() {
+void main() async {
+  // 앱 초기화
+  await AppInitializer.initialize();
+
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  final AlarmService _alarmService = AlarmService();
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+
+  @override
+  void initState() {
+    super.initState();
+
+    // 알람 스트림 리스너 설정
+    _alarmService.alarmStream.listen(_showAlarmDismissScreen);
+  }
+
+  @override
+  void dispose() {
+    _alarmService.dispose();
+    super.dispose();
+  }
+
+  // 알람 종료 화면 표시
+  void _showAlarmDismissScreen(AlarmModel alarm) {
+    _navigatorKey.currentState?.push(
+      MaterialPageRoute(
+        builder:
+            (context) => AlarmDismissScreen.create(
+              alarm: alarm,
+              onDismiss: () {
+                // 알람 종료
+                _alarmService.dismissAlarm(alarm.id);
+
+                // 종료 화면 닫기
+                _navigatorKey.currentState?.pop();
+              },
+            ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: '알람 앱',
+      navigatorKey: _navigatorKey,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const HomeScreen(),
     );
   }
 }
@@ -28,14 +79,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -47,19 +90,13 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
+        // child: ValueListenableBuilder(
+        //   valueListenable: T value,
+        //   builder: (BuildContext context, T value, Widget widget) {},
+        // ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
+        onPressed: () {},
         tooltip: 'Increment',
         child: const Icon(Icons.add),
       ),
