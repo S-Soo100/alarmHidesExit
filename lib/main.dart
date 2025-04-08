@@ -1,11 +1,21 @@
+import 'package:alarm_hides_exit/models/alarm_dismiss_type.dart';
 import 'package:flutter/material.dart';
 import 'package:alarm_hides_exit/models/alarm_model.dart';
 import 'package:alarm_hides_exit/screens/dismiss/alarm_dismiss_base.dart';
 import 'package:alarm_hides_exit/screens/home_screen.dart';
 import 'package:alarm_hides_exit/services/alarm_service.dart';
 import 'package:alarm_hides_exit/utils/app_initializer.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 void main() async {
+  await Hive.initFlutter();
+
+  // Hive 어댑터 등록 - typeId가 참조되는 순서대로 등록 필요
+  Hive.registerAdapter(AlarmDismissTypeAdapter()); // typeId: 1
+  Hive.registerAdapter(AlarmModelAdapter()); // typeId: 0
+  await Hive.openBox<AlarmModel>('alarms');
+
   // 앱 초기화
   await AppInitializer.initialize();
 

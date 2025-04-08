@@ -10,13 +10,6 @@ class AppInitializer {
   static Future<void> initialize() async {
     WidgetsFlutterBinding.ensureInitialized();
 
-    // Hive 데이터베이스 초기화
-    await Hive.initFlutter();
-
-    // Hive 어댑터 등록 - typeId가 참조되는 순서대로 등록 필요
-    Hive.registerAdapter(AlarmDismissTypeAdapter()); // typeId: 1
-    Hive.registerAdapter(AlarmModelAdapter()); // typeId: 0
-
     // 알람 서비스 초기화
     final alarmService = AlarmService();
     await alarmService.init();

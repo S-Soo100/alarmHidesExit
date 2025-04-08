@@ -252,8 +252,123 @@ class AppInitializer {
 
 ## 플랫폼 설정
 
-- Android: 백그라운드 실행 및 알람 관련 권한 설정
-- iOS: 백그라운드 모드 및 알림 권한 설정
+### Android 권한 설정
+
+```xml
+<!-- AndroidManifest.xml -->
+<!-- 시스템 재부팅 후 알람 복원을 위한 권한 -->
+<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+<!-- 알람 울릴 때 CPU 및 화면 깨우기 위한 권한 -->
+<uses-permission android:name="android.permission.WAKE_LOCK"/>
+<!-- 알람 진동 기능을 위한 권한 -->
+<uses-permission android:name="android.permission.VIBRATE"/>
+<!-- 잠금화면 위에 알람 표시를 위한 권한 -->
+<uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
+<!-- 백그라운드 서비스 실행 권한 -->
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+<!-- Android 12(API 31)까지 정확한 알람 예약 권한 -->
+<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"
+                 android:minSdkVersion="31"
+                 android:maxSdkVersion="32" />
+<!-- Android 13(API 33) 이상에서 사용되는 정확한 알람 예약 권한 -->
+<uses-permission android:name="android.permission.USE_EXACT_ALARM"
+                 android:minSdkVersion="33" />
+<!-- 알림 표시 권한(Android 13 이상 필수) -->
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+```
+
+### Android 서비스 등록
+
+```xml
+<!-- AndroidManifest.xml의 application 블록 내부 -->
+<service
+    android:name="dev.fluttercommunity.plus.androidalarmmanager.AlarmService"
+    android:permission="android.permission.BIND_JOB_SERVICE"
+    android:exported="false"/>
+<receiver
+    android:name="dev.fluttercommunity.plus.androidalarmmanager.AlarmBroadcastReceiver"
+    android:exported="false"/>
+<receiver
+    android:name="dev.fluttercommunity.plus.androidalarmmanager.RebootBroadcastReceiver"
+    android:enabled="false"
+    android:exported="false">
+    <intent-filter>
+        <action android:name="android.intent.action.BOOT_COMPLETED" />
+    </intent-filter>
+</receiver>
+```
+
+### Android 활동 설정
+
+```xml
+<activity
+    android:name=".MainActivity"
+    ...
+    android:showWhenLocked="true"
+    android:turnScreenOn="true">
+```
+
+### iOS 백그라운드 모드 설정
+
+```xml
+<!-- Info.plist -->
+<key>UIBackgroundModes</key>
+<array>
+    <string>audio</string>
+    <string>fetch</string>
+    <string>processing</string>
+    <string>remote-notification</string>
+</array>
+```
+
+### iOS 권한 설명 설정
+
+```xml
+<!-- Info.plist -->
+<key>NSCalendarsUsageDescription</key>
+<string>알람 설정을 위해 캘린더 접근 권한이 필요합니다.</string>
+<key>NSUserNotificationUsageDescription</key>
+<string>알람 알림을 표시하기 위해 알림 권한이 필요합니다.</string>
+<key>NSMicrophoneUsageDescription</key>
+<string>알람 소리 재생을 위해 권한이 필요합니다.</string>
+<key>NSMotionUsageDescription</key>
+<string>알람 진동 기능을 위해 권한이 필요합니다.</string>
+```
+
+## 권한 관리 코드
+
+앱 실행 시 필요한 권한 요청을 처리하는 코드:
+
+```dart
+// lib/utils/permission_handler.dart
+class PermissionHandler {
+  // Android 12 이상에서 정확한 알람 권한 확인
+  static Future<bool> _isAlarmPermissionRequired() async {
+    if (Platform.isAndroid) {
+      final AndroidDeviceInfo androidInfo = await _deviceInfoPlugin.androidInfo;
+      return androidInfo.version.sdkInt >= 31; // Android 12 (API 31) 이상
+    }
+    return false;
+  }
+
+  // 알림 및 알람 권한 요청
+  static Future<bool> requestNotificationPermissions(BuildContext context) async {
+    // iOS 및 Android 플랫폼별 권한 요청 로직
+    if (Platform.isIOS) {
+      // iOS 알림 권한 요청
+    } else if (Platform.isAndroid) {
+      // Android 13+ 알림 권한 요청
+      // Android 12+ 정확한 알람 권한 요청
+    }
+    return permissionsGranted;
+  }
+}
+```
+
+## 최소 지원 버전
+
+- Android: API 레벨 23 (Android 6.0 Marshmallow) 이상
+- iOS: iOS 10 이상
 
 ## Getting Started
 
