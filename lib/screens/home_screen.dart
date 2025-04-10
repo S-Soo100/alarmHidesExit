@@ -1,3 +1,4 @@
+import 'package:alarm_hides_exit/services/minute_alarm_service.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
@@ -17,16 +18,62 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final AlarmRepository _repository = AlarmRepository();
   final AlarmService _alarmService = AlarmService();
+  final MinuteAlarmService _minuteAlarmService = MinuteAlarmService(); // 추가
+  bool _isMinuteAlarmActive = false; // 추가
 
   @override
   void initState() {
     super.initState();
     // 화면이 로드된 후 저장소 초기화
     _initRepository();
+    // _initMinuteAlarmService(); // 추가
+  }
+
+  Future<void> _initMinuteAlarmService() async {
+    await _minuteAlarmService.init();
+
+    // 알람 이벤트 리스너 등록
+    _minuteAlarmService.alarmStream.listen(_showAlarmDismissScreen);
+  }
+
+  void _showAlarmDismissScreen(AlarmModel alarm) {
+    // 앱이 실행 중일 때 알람이 울리면 팝업 표시
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(alarm.title),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(alarm.description),
+              const SizedBox(height: 10),
+              Text('시간: ${DateFormat('HH:mm:ss').format(alarm.time)}'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('끄기'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _initRepository() async {
     await _repository.initialize();
+  }
+
+  @override
+  void dispose() {
+    _minuteAlarmService.dispose();
+    super.dispose();
   }
 
   @override
@@ -35,6 +82,48 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('알람'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        actions: [
+          // 1분 알람 토글 버튼 추가
+          Switch(
+            value: _isMinuteAlarmActive,
+            onChanged: (value) {
+              setState(() {
+                _isMinuteAlarmActive = value;
+                if (_isMinuteAlarmActive) {
+                  _minuteAlarmService.startMinuteAlarm();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('1분 알람이 시작되었습니다')),
+                  );
+                } else {
+                  _minuteAlarmService.stopMinuteAlarm();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('1분 알람이 중지되었습니다')),
+                  );
+                }
+              });
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.timer),
+            tooltip: '1분 알람',
+            onPressed: () {
+              setState(() {
+                _isMinuteAlarmActive = !_isMinuteAlarmActive;
+                if (_isMinuteAlarmActive) {
+                  _minuteAlarmService.startMinuteAlarm();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('1분 알람이 시작되었습니다')),
+                  );
+                } else {
+                  _minuteAlarmService.stopMinuteAlarm();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('1분 알람이 중지되었습니다')),
+                  );
+                }
+              });
+            },
+          ),
+        ],
       ),
       body: ValueListenableBuilder<Box<AlarmModel>>(
         valueListenable: _repository.alarmsListenable,
